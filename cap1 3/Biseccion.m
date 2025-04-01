@@ -9,12 +9,7 @@ function [Resultado, tabla, output] = Biseccion(a, b, Tol, N_Max, Funcion_Objeti
     fa = double(subs(Funcion_Objetivo, x, a));
     fb = double(subs(Funcion_Objetivo, x, b));
 
-    if fa * fb >= 0
-        output = 'El intervalo no cumple el criterio de cambio de signo';
-        Resultado = NaN;
-        tabla = table();
-        return;
-    end
+    
 
     while (b - a) / 2 > Tol && Contador < N_Max
         c = (a + b) / 2;
