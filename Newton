@@ -1,0 +1,74 @@
+function [S_estacionario, iter] = newton_monod_completo()
+    % Parámetros del modelo de Monod
+    mu_max = 0.5;       % Tasa máxima de crecimiento [h⁻¹]
+    K_S = 0.2;          % Constante de saturación [g/L]
+    mu_deseado = 0.3;   % Tasa de crecimiento deseada [h⁻¹]
+    
+    % Puntos iniciales especificados
+    S0 = 0.1;           % Concentración inicial baja [g/L]
+    S1 = 2.0;           % Concentración inicial alta [g/L]
+    
+    % Configuración del método
+    tol = 1e-6;
+    max_iter = 50;
+    
+    % Función protegida contra valores negativos
+    monod = @(S) mu_max*max(S,eps)/(K_S + max(S,eps));
+    f = @(S) monod(S) - mu_deseado;
+    df = @(S) mu_max*K_S/(K_S + max(S,eps))^2;
+    
+    % Procesar ambos puntos iniciales
+    puntos_iniciales = [S0, S1];
+    
+    for i = 1:length(puntos_iniciales)
+        S = puntos_iniciales(i);
+        fprintf('\n=== Ejecución con S%d = %.1f g/L ===\n', i, S);
+        
+        fprintf('\nIter\tS [g/L]\t\tμ(S)\t\tf(S)\t\tError\n');
+        fprintf('==================================================\n');
+        
+        for iter = 0:max_iter
+            % Evaluar función y derivada
+            f_val = f(S);
+            df_val = df(S);
+            mu = monod(S);
+            
+            % Mostrar iteración actual
+            if iter == 0
+                fprintf('%3d\t%9.6f\t%9.6f\t%9.6f\t%10s\n', iter, S, mu, f_val, '-');
+            else
+                fprintf('%3d\t%9.6f\t%9.6f\t%9.6f\t%10.6f\n', iter, S, mu, f_val, error);
+            end
+            
+            % Verificar convergencia
+            if abs(f_val) < tol
+                fprintf('\nConvergencia alcanzada en %d iteraciones\n', iter);
+                fprintf('Solución final: S = %.8f g/L\n', S);
+                fprintf('μ(S) = %.8f h⁻¹\n', mu);
+                break;
+            end
+            
+            % Control adaptativo del paso
+            paso = f_val/(df_val + eps);  % Evitar división por cero
+            alpha = 1.0;
+            
+            % Búsqueda lineal con retroceso
+            for k = 1:5
+                S_temp = S - alpha*paso;
+                if S_temp > 0 && abs(f(S_temp)) < abs(f_val)
+                    break;
+                end
+                alpha = alpha/2;
+            end
+            
+            % Actualización
+            error = abs(alpha*paso);
+            S = S - alpha*paso;
+            
+            if iter == max_iter
+                fprintf('\nAdvertencia: Máximo de iteraciones alcanzado\n');
+            end
+        end
+    end
+    S_estacionario = S;
+end
