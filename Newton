@@ -1,0 +1,74 @@
+function [S_steady, iter] = newton_monod_complete()
+    % Monod model parameters
+    mu_max = 0.5;       % Maximum growth rate [h⁻¹]
+    K_S = 0.2;          % Saturation constant [g/L]
+    desired_mu = 0.3;   % Target growth rate [h⁻¹]
+    
+    % Specified initial points
+    S0 = 0.1;           % Low initial concentration [g/L]
+    S1 = 2.0;           % High initial concentration [g/L]
+    
+    % Method configuration
+    tol = 1e-6;
+    max_iter = 50;
+    
+    % Protected function against negative values
+    monod = @(S) mu_max*max(S,eps)/(K_S + max(S,eps));
+    f = @(S) monod(S) - desired_mu;
+    df = @(S) mu_max*K_S/(K_S + max(S,eps))^2;
+    
+    % Process both initial points
+    initial_points = [S0, S1];
+    
+    for i = 1:length(initial_points)
+        S = initial_points(i);
+        fprintf('\n=== Run with S%d = %.1f g/L ===\n', i, S);
+        
+        fprintf('\nIter\tS [g/L]\t\tμ(S)\t\tf(S)\t\tError\n');
+        fprintf('==================================================\n');
+        
+        for iter = 0:max_iter
+            % Evaluate function and derivative
+            f_val = f(S);
+            df_val = df(S);
+            mu = monod(S);
+            
+            % Display current iteration
+            if iter == 0
+                fprintf('%3d\t%9.6f\t%9.6f\t%9.6f\t%10s\n', iter, S, mu, f_val, '-');
+            else
+                fprintf('%3d\t%9.6f\t%9.6f\t%9.6f\t%10.6f\n', iter, S, mu, f_val, error);
+            end
+            
+            % Check convergence
+            if abs(f_val) < tol
+                fprintf('\nConvergence reached in %d iterations\n', iter);
+                fprintf('Final solution: S = %.8f g/L\n', S);
+                fprintf('μ(S) = %.8f h⁻¹\n', mu);
+                break;
+            end
+            
+            % Adaptive step control
+            step = f_val/(df_val + eps);  % Avoid division by zero
+            alpha = 1.0;
+            
+            % Backtracking line search
+            for k = 1:5
+                S_temp = S - alpha*step;
+                if S_temp > 0 && abs(f(S_temp)) < abs(f_val)
+                    break;
+                end
+                alpha = alpha/2;
+            end
+            
+            % Update
+            error = abs(alpha*step);
+            S = S - alpha*step;
+            
+            if iter == max_iter
+                fprintf('\nWarning: Maximum iterations reached\n');
+            end
+        end
+    end
+    S_steady = S;
+end
