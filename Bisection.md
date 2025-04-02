@@ -47,3 +47,15 @@ function [result_table, S_root] = bisection(mu_max, K_s, desired_mu, a, b, nmax,
     end
 end
 
+
+%inputs
+%mu_max = 0.5;       % [h⁻¹]
+%K_s = 0.2;          % [g/L]
+%desired_mu = 0.3;   % [h⁻¹]
+
+%a = 0.1; b = 2.0;   % [g/L]  f(a)*f(b)<0)
+%nmax = 100; tol = 1e-7;
+
+%[results, solution] = bisection(mu_max, K_s, desired_mu, a, b, nmax, tol);
+%disp(results);
+%fprintf('Solution: S = %.6f g/L\n', solution);
